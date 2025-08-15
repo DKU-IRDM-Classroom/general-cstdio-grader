@@ -17,6 +17,7 @@ inputs:
 
 permissions:
   contents: read
+  actions: read
   checks: write
 
 runs:
@@ -74,7 +75,7 @@ runs:
         PASS=0
         TOTAL="${{ inputs.total }}"
 
-        echo "Score ${PASS} / ${TOTAL}"
+        echo "Points ${PASS} / ${TOTAL}"
 
     - name: grade
       id: grade
@@ -141,4 +142,4 @@ runs:
 
         done
 
-        echo "Score ${PASS} / ${TOTAL}"
+        echo "Points ${PASS} / ${TOTAL}"
