@@ -45,7 +45,7 @@ runs:
           exit 2
         fi
 
-        cp ./main.c /workdir/
+        cp ./main.c "$HOME/workdir/""
 
         docker run --rm \
           --pull=never \
@@ -58,7 +58,7 @@ runs:
           --security-opt no-new-privileges \
           --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
           -u "$(id -u):$(id -g)" \
-          -v /workdir:/workdir \
+          -v "$HOME/workdir":/workdir \
           -w /workdir \
           gcc:13 \
           bash -lc 'set -euo pipefail; gcc -O2 -std=c17 -o main main.c'
@@ -101,7 +101,7 @@ runs:
             --security-opt no-new-privileges \
             --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
             -u "$(id -u):$(id -g)" \
-            -v /workdir:/workdir \
+            -v "$HOME/workdir":/workdir \
             -w /workdir \
             -e n="$n" \
             gcc:13 \
@@ -116,16 +116,16 @@ runs:
           elif [ ${RC} -ne 0 ]; then
             echo "[케이스 ${n}] 실행 오류 (RE)"; continue
           fi
-          BYTES=$(stat -c%s "./workdir/${n}.out")
-          if [ "$BYTES" -gt "$OUT_LIMIT" ]; then
+          BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
+          if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
             echo "[케이스 ${n}] 출력 초과 (OLE)"; continue
           fi
 
           set +e
           python3 \
             "${{ github.action_path }}/compare.py" \
-            "/workdir/${n}.ans" \
-            "/workdir/${n}.out"
+            "$HOME/workdir/${n}.ans" \
+            "$HOME/workdir/${n}.out"
           CMP=$?
           set -e
 
