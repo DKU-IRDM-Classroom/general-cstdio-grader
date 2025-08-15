@@ -75,13 +75,16 @@ runs:
         PASS=0
         TOTAL="${{ inputs.total }}"
 
-        echo "Points ${PASS}/${TOTAL}"
+        echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}" > result.json
+        echo "result=$(jq -c . result.json | jq -sRr @base64)" >> "$GITHUB_OUTPUT"
 
-        {
-          echo "result<<EOF"
-          echo "{\"name\":\"fail result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
+    - name: reporter
+      if: ${{ steps.build.outcome != 'success' }}
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        FAIL_RESULTS: "${{ steps.fail.outputs.result }}"
+      with:
+        runners: fail
 
     - name: grade
       id: grade
@@ -148,18 +151,13 @@ runs:
 
         done
 
-        echo "Points ${PASS}/${TOTAL}"
+        echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}" > result.json
+        echo "result=$(jq -c . result.json | jq -sRr @base64)" >> "$GITHUB_OUTPUT"
 
-        {
-          echo "result<<EOF"
-          echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}"
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
-
-    - name: Autograding Reporter
+    - name: reporter
+      if: ${{ steps.build.outcome == 'success' }}
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
-        FAIL_RESULTS: "${{ steps.grade.outputs.result }}"
         GRADE_RESULTS: "${{ steps.grade.outputs.result }}"
       with:
-        runners: fail,grade
+        runners: grade
