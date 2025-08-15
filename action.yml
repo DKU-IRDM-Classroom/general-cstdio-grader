@@ -1,19 +1,18 @@
-name: "stdio-grader-action"
-description: "For GitHub Classroom: (1) Generate cases from private grader (2) Build (3) Evaluation per line and token (4) Scoring (5) Report"
-author: "DKU-IRDM-Teaching"
+name: "general-stdio-grader"
+description: "General Std I/O Grader"
+author: "DKU-IRDM-Classroom"
 
 inputs:
   time-limit:
-    description: "Time limit (ex: 1)"
-    required: true
+    required: false
+    default: 2
   memory-limit:
-    description: "Memory limit (ex: 256m)"
-    required: true
-  grader-repo:
-    description: "Private grader repository in Teaching"
-    required: true
-  teaching-token:
-    description: "PAT reader for Teaching repositories."
+    required: false
+    default: '256m'
+  output-limit:
+    required: false
+    default: 1048576
+  total:
     required: true
 
 permissions:
@@ -24,57 +23,17 @@ runs:
   using: "composite"
   steps:
 
-    - name: prepare environment
-      id: prepare-environment
-      shell: bash
-      run: |
-        : 환경 준비
-        set -euo pipefail
-
-        command -v docker >/dev/null
-        python3 -V >/dev/null
-
-    - name: prepare build
-      id: prepare-build
+    - name: 빌드 준비
+      id: prepare
       shell: bash
       run: |
         : 빌드 준비
         set -euo pipefail
 
+        command -v docker >/dev/null
         docker pull -q gcc:13 >/dev/null
 
-    - name: prepare grader
-      id: prepare-grade
-      shell: bash
-      run: |
-        : 채점기 준비
-        set -euo pipefail
-
-        git clone \
-          --quiet \
-          --depth=1 \
-          "https://${{ inputs.teaching-token }}@github.com/DKU-IRDM-Teaching/${{ inputs.grader-repo }}.git" \
-          ./workdir \
-
-    - name: generate cases
-      id: generate-cases
-      shell: bash
-      run: |
-        : 케이스 생성
-        set -euo pipefail
-
-        python3 ./workdir/generate.py
-
-        if [ ! -f ./workdir/num_cases.txt ]; then
-          echo "error: no num_cases.txt file found" >&2
-          exit 1
-        fi
-        TOTAL=$(tr -d '\r' < ./workdir/num_cases.txt | head -n1)
-        case "$TOTAL" in ''|*[!0-9]* ) echo "error: invalid number of cases: '$TOTAL'" >&2; exit 1;; esac
-
-        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
-
-    - name: build
+    - name: 빌드
       id: build
       shell: bash
       run: |
@@ -82,11 +41,11 @@ runs:
         set -euo pipefail
 
         if [ ! -f ./main.c ]; then
-          echo "error: no main.c file found"
+          echo "액션 오류: main.c 파일 없음"
           exit 2
         fi
 
-        cp ./main.c ./workdir/
+        cp ./main.c /workdir/
 
         docker run --rm \
           --pull=never \
@@ -99,7 +58,7 @@ runs:
           --security-opt no-new-privileges \
           --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
           -u "$(id -u):$(id -g)" \
-          -v "$PWD/workdir":/workdir \
+          -v /workdir:/workdir \
           -w /workdir \
           gcc:13 \
           bash -lc 'set -euo pipefail; gcc -O2 -std=c17 -o main main.c'
@@ -113,7 +72,7 @@ runs:
         set -euo pipefail
 
         PASS=0
-        TOTAL="${{ steps.generate-cases.outputs.total }}"
+        TOTAL="${{ inputs.total }}"
 
         echo "Score ${PASS} / ${TOTAL}"
 
@@ -126,8 +85,7 @@ runs:
         set -euo pipefail
 
         PASS=0
-        TOTAL="${{ steps.generate-cases.outputs.total }}"
-        OUT_LIMIT=1048576
+        TOTAL="${{ inputs.total }}"
 
         for n in $(seq 1 ${TOTAL}); do
 
@@ -143,11 +101,11 @@ runs:
             --security-opt no-new-privileges \
             --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
             -u "$(id -u):$(id -g)" \
-            -v "$PWD/workdir":/workdir \
+            -v /workdir:/workdir \
             -w /workdir \
             -e n="$n" \
             gcc:13 \
-            bash -lc './main < "${n}.in" > "${n}.out"'
+            bash -lc '/workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"'
           RC=$?
           set -e
 
@@ -165,9 +123,9 @@ runs:
 
           set +e
           python3 \
-            "${{ github.action_path }}/scripts/compare.py" \
-            "./workdir/${n}.ans" \
-            "./workdir/${n}.out"
+            "${{ github.action_path }}/compare.py" \
+            "/workdir/${n}.ans" \
+            "/workdir/${n}.out"
           CMP=$?
           set -e
 
@@ -184,7 +142,3 @@ runs:
         done
 
         echo "Score ${PASS} / ${TOTAL}"
-
-branding:
-  icon: "check-circle"
-  color: "blue"
