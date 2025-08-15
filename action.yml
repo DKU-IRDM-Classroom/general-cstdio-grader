@@ -77,6 +77,12 @@ runs:
 
         echo "Points ${PASS}/${TOTAL}"
 
+        {
+          echo "result<<EOF"
+          echo "{\"name\":\"fail result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
     - name: grade
       id: grade
       if: ${{ steps.build.outcome == 'success' }}
@@ -145,15 +151,15 @@ runs:
         echo "Points ${PASS}/${TOTAL}"
 
         {
-          echo "GRADE_RESULTS<<EOF"
+          echo "result<<EOF"
           echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}"
           echo "EOF"
-        } > result.json
-        echo "result=$(cat result.json)" >> "$GITHUB_OUTPUT"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
+        FAIL_RESULTS: "${{ steps.grade.outputs.result }}"
         GRADE_RESULTS: "${{ steps.grade.outputs.result }}"
       with:
-        runners: grade
+        runners: fail,grade
