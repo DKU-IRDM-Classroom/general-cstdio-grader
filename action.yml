@@ -122,7 +122,7 @@ runs:
           fi
 
           set +e
-          python3 \
+          python3 -u \
             "${{ github.action_path }}/compare.py" \
             "$HOME/workdir/${n}.ans" \
             "$HOME/workdir/${n}.out"
