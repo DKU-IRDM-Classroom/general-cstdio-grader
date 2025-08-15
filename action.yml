@@ -1,0 +1,190 @@
+name: "stdio-grader-action"
+description: "For GitHub Classroom: (1) Generate cases from private grader (2) Build (3) Evaluation per line and token (4) Scoring (5) Report"
+author: "DKU-IRDM-Teaching"
+
+inputs:
+  time-limit:
+    description: "Time limit (ex: 1)"
+    required: true
+  memory-limit:
+    description: "Memory limit (ex: 256m)"
+    required: true
+  grader-repo:
+    description: "Private grader repository in Teaching"
+    required: true
+  teaching-token:
+    description: "PAT reader for Teaching repositories."
+    required: true
+
+permissions:
+  contents: read
+  checks: write
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: prepare environment
+      id: prepare-environment
+      shell: bash
+      run: |
+        : 환경 준비
+        set -euo pipefail
+
+        command -v docker >/dev/null
+        python3 -V >/dev/null
+
+    - name: prepare build
+      id: prepare-build
+      shell: bash
+      run: |
+        : 빌드 준비
+        set -euo pipefail
+
+        docker pull -q gcc:13 >/dev/null
+
+    - name: prepare grader
+      id: prepare-grade
+      shell: bash
+      run: |
+        : 채점기 준비
+        set -euo pipefail
+
+        git clone \
+          --quiet \
+          --depth=1 \
+          "https://${{ inputs.teaching-token }}@github.com/DKU-IRDM-Teaching/${{ inputs.grader-repo }}.git" \
+          ./workdir \
+
+    - name: generate cases
+      id: generate-cases
+      shell: bash
+      run: |
+        : 케이스 생성
+        set -euo pipefail
+
+        python3 ./workdir/generate.py
+
+        if [ ! -f ./workdir/num_cases.txt ]; then
+          echo "error: no num_cases.txt file found" >&2
+          exit 1
+        fi
+        TOTAL=$(tr -d '\r' < ./workdir/num_cases.txt | head -n1)
+        case "$TOTAL" in ''|*[!0-9]* ) echo "error: invalid number of cases: '$TOTAL'" >&2; exit 1;; esac
+
+        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
+    - name: build
+      id: build
+      shell: bash
+      run: |
+        : 빌드
+        set -euo pipefail
+
+        if [ ! -f ./main.c ]; then
+          echo "error: no main.c file found"
+          exit 2
+        fi
+
+        cp ./main.c ./workdir/
+
+        docker run --rm \
+          --pull=never \
+          --network none \
+          --cpus "1.0" \
+          --memory "256m" \
+          --memory-swap "256m" \
+          --pids-limit "128" \
+          --cap-drop ALL \
+          --security-opt no-new-privileges \
+          --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
+          -u "$(id -u):$(id -g)" \
+          -v "$PWD/workdir":/workdir \
+          -w /workdir \
+          gcc:13 \
+          bash -lc 'set -euo pipefail; gcc -O2 -std=c17 -o main main.c'
+
+    - name: fail
+      id: fail
+      if: ${{ steps.build.outcome != 'success' }}
+      shell: bash
+      run: |
+        : 빌드 실패
+        set -euo pipefail
+
+        PASS=0
+        TOTAL="${{ steps.generate-cases.outputs.total }}"
+
+        echo "Score ${PASS} / ${TOTAL}"
+
+    - name: grade
+      id: grade
+      if: ${{ steps.build.outcome == 'success' }}
+      shell: bash
+      run: |
+        : 채점
+        set -euo pipefail
+
+        PASS=0
+        TOTAL="${{ steps.generate-cases.outputs.total }}"
+        OUT_LIMIT=1048576
+
+        for n in $(seq 1 ${TOTAL}); do
+
+          set +e
+          timeout --signal=KILL ${{ inputs.time-limit }}s \
+          docker run --rm \
+            --network none \
+            --cpus "1.0" \
+            --memory "${{ inputs.memory-limit }}" \
+            --memory-swap "${{ inputs.memory-limit }}" \
+            --pids-limit "128" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
+            -u "$(id -u):$(id -g)" \
+            -v "$PWD/workdir":/workdir \
+            -w /workdir \
+            -e n="$n" \
+            gcc:13 \
+            bash -lc './main < "${n}.in" > "${n}.out"'
+          RC=$?
+          set -e
+
+          if [ ${RC} -eq 124 ]; then
+            echo "[케이스 ${n}] 시간 초과 (TLE)"; continue
+          elif [ ${RC} -eq 137 ]; then
+            echo "[케이스 ${n}] 메모리 초과 (MLE)"; continue
+          elif [ ${RC} -ne 0 ]; then
+            echo "[케이스 ${n}] 실행 오류 (RE)"; continue
+          fi
+          BYTES=$(stat -c%s "./workdir/${n}.out")
+          if [ "$BYTES" -gt "$OUT_LIMIT" ]; then
+            echo "[케이스 ${n}] 출력 초과 (OLE)"; continue
+          fi
+
+          set +e
+          python3 \
+            "${{ github.action_path }}/scripts/compare.py" \
+            "./workdir/${n}.ans" \
+            "./workdir/${n}.out"
+          CMP=$?
+          set -e
+
+          if [ $CMP -eq 0 ]; then
+            echo "[케이스 ${n}] 정답 (AC)"; PASS=$((PASS+1))
+          elif [ $CMP -eq 1 ]; then
+            echo "[케이스 ${n}] 오답 (WA)"
+          elif [ $CMP -eq 2 ]; then
+            echo "[케이스 ${n}] 형식 오류 (PE)"
+          else
+            echo "[케이스 ${n}] 내부 오류 (IE)"
+          fi
+
+        done
+
+        echo "Score ${PASS} / ${TOTAL}"
+
+branding:
+  icon: "check-circle"
+  color: "blue"
