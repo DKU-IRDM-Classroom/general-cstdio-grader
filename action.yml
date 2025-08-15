@@ -146,7 +146,7 @@ runs:
 
         {
           echo "GRADE_RESULTS<<EOF"
-          echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points: $PASS/$TOTAL\"}"
+          echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}"
           echo "EOF"
         } > result.json
         echo "result=$(cat result.json)" >> "$GITHUB_OUTPUT"
