@@ -75,9 +75,7 @@ runs:
         PASS=0
         TOTAL="${{ inputs.total }}"
 
-        # echo "Points ${PASS}/${TOTAL}"
-        echo "pass=${PASS}" >> "$GITHUB_OUTPUT"
-        echo "total=${TOTAL}" >> "$GITHUB_OUTPUT"
+        echo "Points ${PASS}/${TOTAL}"
 
     - name: grade
       id: grade
@@ -144,13 +142,18 @@ runs:
 
         done
 
-        # echo "Points ${PASS}/${TOTAL}"
-        echo "pass=${PASS}" >> "$GITHUB_OUTPUT"
-        echo "total=${TOTAL}" >> "$GITHUB_OUTPUT"
+        echo "Points ${PASS}/${TOTAL}"
 
-    - name: mark
-      id: mark
-      uses: markpatterson27/autograding@dev-points-input-release
+        {
+          echo "GRADE_RESULTS<<EOF"
+          echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points: $PASS/$TOTAL\"}"
+          echo "EOF"
+        } > result.json
+        echo "result=$(cat result.json)" >> "$GITHUB_OUTPUT"
+
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        GRADE_RESULTS: "${{ steps.grade.outputs.result }}"
       with:
-        points: ${{ steps.grade.outputs.pass }}
-        available-points: ${{ steps.grade.outputs.total }}
+        runners: grade
