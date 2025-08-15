@@ -45,14 +45,14 @@ runs:
           exit 2
         fi
 
-        cp ./main.c "$HOME/workdir/""
+        cp ./main.c "$HOME/workdir/"
 
         docker run --rm \
           --pull=never \
           --network none \
           --cpus "1.0" \
-          --memory "256m" \
-          --memory-swap "256m" \
+          --memory "${{ inputs.memory-limit }}" \
+          --memory-swap "${{ inputs.memory-limit }}" \
           --pids-limit "128" \
           --cap-drop ALL \
           --security-opt no-new-privileges \
