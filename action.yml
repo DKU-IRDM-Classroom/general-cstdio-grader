@@ -75,7 +75,7 @@ runs:
         PASS=0
         TOTAL="${{ inputs.total }}"
 
-        echo "Points ${PASS} / ${TOTAL}"
+        echo "Points ${PASS}/${TOTAL}"
 
     - name: grade
       id: grade
@@ -142,4 +142,4 @@ runs:
 
         done
 
-        echo "Points ${PASS} / ${TOTAL}"
+        echo "Points ${PASS}/${TOTAL}"
