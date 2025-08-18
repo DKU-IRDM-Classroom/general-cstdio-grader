@@ -108,7 +108,7 @@ runs:
             -v "$HOME/workdir":/workdir \
             -w /workdir \
             -e n="$n" \
-            debian:stable-slim \
+            ubuntu-latest \
             bash -lc '/workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"'
           RC=$?
           set -e
