@@ -164,17 +164,3 @@ runs:
         done
 
         echo "::notice::Points ${PASS}/${{ inputs.total-cases }}"
-        python3 \
-          "${{ github.action_path }}/generate_results.py" \
-          "$HOME/workdir" \
-          "${{ inputs.total-cases }}" \
-          "${PASS}"
-        echo "results=$(jq -c . $HOME/workdir/results.json | base64 -w0)" >> $GITHUB_OUTPUT
-
-    - name: 리포트
-      id: reporter
-      uses: classroom-resources/autograding-grading-reporter@v1
-      env:
-        GRADE_RESULTS: "${{ steps.grade.outputs.results }}"
-      with:
-        runners: grade
