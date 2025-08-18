@@ -14,9 +14,9 @@ def generate_results(total_score: int, pass_score: int):
                 'name': 'Test',
                 'status': 'pass' if pass_score > 0 else 'fail',
                 'score': pass_score,
-                'message': 'some_message_here',
-                'test_code': 'some_command_heere',
-                'filename': 'some_filename_here',
+                'message': '',
+                'test_code': '',
+                'filename': '',
                 'line_no': 0,
                 'execution_time': 0,
             },
@@ -34,4 +34,4 @@ if __name__ == '__main__':
     results = generate_results(total_score, pass_score)
 
     with open(base_dir / 'results.json', 'w') as file_pointer:
-        json.dump(results, file_pointer, indent=2)
+        json.dump(results, file_pointer)
