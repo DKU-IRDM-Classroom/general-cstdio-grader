@@ -139,9 +139,9 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "::warning::[케이스 ${n}] 시공간 초과 (TLE)"; exit 2
+            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; exit 2
           elif [ ${RC} -eq 137 ]; then
-            echo "::warning::[케이스 ${n}] 시공간 초과 (MLE)"; exit 2
+            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; exit 2
           elif [ ${RC} -ne 0 ]; then
             echo "::warning::[케이스 ${n}] 실행 오류 (RE)"; exit 2
           fi
