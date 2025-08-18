@@ -44,7 +44,7 @@ runs:
         set -euo pipefail
 
         if [ ! -f ./main.c ]; then
-          echo "::error::형식 오류: main.c 파일 없음"
+          echo "형식 오류 (PE): main.c 파일 없음"
           echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
@@ -62,7 +62,7 @@ runs:
         if gcc -O2 -std=c17 -o "$HOME/workdir/main" main.c >/dev/null 2>/tmp/gcc.err; then
           exit 0
         else
-          echo "::error::컴파일 오류"
+          echo "컴파일 오류 (CE)"
           echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
@@ -116,18 +116,18 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "::warning::[Case ${n}] 시공간 초과 (SLE)"
+            echo "[Case ${n}] 시공간 초과 (T/MLE)"
             continue
           elif [ ${RC} -eq 137 ]; then
-            echo "::warning::[Case ${n}] 시공간 초과 (SLE)"
+            echo "[Case ${n}] 시공간 초과 (T/MLE)"
             continue
           elif [ ${RC} -ne 0 ]; then
-            echo "::warning::[Case ${n}] 실행 오류 (RE)"
+            echo "[Case ${n}] 실행 오류 (RE)"
             continue
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
-            echo "::warning::[Case ${n}] 출력 초과 (OLE)"
+            echo "[Case ${n}] 출력 초과 (OLE)"
             continue
           fi
 
@@ -144,13 +144,13 @@ runs:
             PASS=$((PASS+1))
             continue
           elif [ $CMP -eq 1 ]; then
-            echo "::warning::[Case ${n}] 오답 (WA)"
+            echo "[Case ${n}] 오답 (WA)"
             continue
           elif [ $CMP -eq 2 ]; then
-            echo "::warning::[Case ${n}] 형식 오류 (PE)"
+            echo "[Case ${n}] 형식 오류 (PE)"
             continue
           else
-            echo "::warning::[Case ${n}] 내부 오류 (IE)"
+            echo "[Case ${n}] 내부 오류 (IE)"
             continue
           fi
 
