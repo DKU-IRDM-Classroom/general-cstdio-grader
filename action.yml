@@ -31,6 +31,16 @@ runs:
         : 채점기 준비
         set -euo pipefail
 
+        if [ ! -f "${{ inputs.module-path }}/num_cases.txt" ]; then
+          echo "::warning::액션 오류: num_cases.txt 파일 없음" >&2
+          exit 1
+        fi
+
+        TOTAL=$(tr -d '\r' < "${{ inputs.module-path }}/num_cases.txt" | head -n1)
+        case "$TOTAL" in ''|*[!0-9]* ) echo "::warning::액션 오류: 케이스 수가 올바르지 않음 ('$TOTAL')" >&2; exit 1;; esac
+
+        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
         mkdir -p "$HOME/workdir"
         chmod 777 "$HOME/workdir"
 
@@ -43,6 +53,7 @@ runs:
 
         if [ ! -f ./main.c ]; then
           echo "::warning::형식 오류: main.c 파일 없음"
+          echo "Points 0/${{ steps.prepare-grader.outputs.total }}"
           exit 2
         fi
 
@@ -78,6 +89,7 @@ runs:
               exit 0
             else
               echo "::warning::컴파일 오류"
+              echo "Points 0/${{ steps.prepare-grader.outputs.total }}"
               exit 2
             fi
           '
@@ -90,16 +102,6 @@ runs:
       run: |
         : 케이스 생성
         set -euo pipefail
-
-        if [ ! -f "${{ inputs.module-path }}/num_cases.txt" ]; then
-          echo "::warning::액션 오류: num_cases.txt 파일 없음" >&2
-          exit 1
-        fi
-
-        TOTAL=$(tr -d '\r' < "${{ inputs.module-path }}/num_cases.txt" | head -n1)
-        case "$TOTAL" in ''|*[!0-9]* ) echo "::warning::액션 오류: 케이스 수가 올바르지 않음 ('$TOTAL')" >&2; exit 1;; esac
-
-        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
         python3 \
           "${{ github.action_path }}/generate_cases.py" \
@@ -139,15 +141,15 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; exit 2
+            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; continue
           elif [ ${RC} -eq 137 ]; then
-            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; exit 2
+            echo "::warning::[케이스 ${n}] 시공간 초과 (TMLE)"; continue
           elif [ ${RC} -ne 0 ]; then
-            echo "::warning::[케이스 ${n}] 실행 오류 (RE)"; exit 2
+            echo "::warning::[케이스 ${n}] 실행 오류 (RE)"; continue
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
-            echo "::warning::[케이스 ${n}] 출력 초과 (OLE)"; exit 2
+            echo "::warning::[케이스 ${n}] 출력 초과 (OLE)"; continue
           fi
 
           set +e
@@ -161,11 +163,13 @@ runs:
           if [ $CMP -eq 0 ]; then
             echo "::notice::[케이스 ${n}] 정답 (AC)"; PASS=$((PASS+1))
           elif [ $CMP -eq 1 ]; then
-            echo "::warning::[케이스 ${n}] 오답 (WA)"; exit 2
+            echo "::warning::[케이스 ${n}] 오답 (WA)"; continue
           elif [ $CMP -eq 2 ]; then
-            echo "::warning::[케이스 ${n}] 형식 오류 (PE)"; exit 2
+            echo "::warning::[케이스 ${n}] 형식 오류 (PE)"; continue
           else
-            echo "::warning::[케이스 ${n}] 내부 오류 (IE)"; exit 1
+            echo "::warning::[케이스 ${n}] 내부 오류 (IE)"; continue
           fi
 
         done
+
+        echo "Points ${PASS}/${TOTAL}"
