@@ -91,6 +91,8 @@ runs:
         : 채점
         set -euo pipefail
 
+        docker pull ubuntu-latest
+
         PASS=0
 
         for n in $(seq 1 ${{ inputs.total-cases }}); do
