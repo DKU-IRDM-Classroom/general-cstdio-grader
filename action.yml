@@ -3,6 +3,8 @@ description: "General C Standard I/O Grader"
 author: "DKU-IRDM-Classroom"
 
 inputs:
+  module-path:
+    required: true
   time-limit:
     required: false
     default: 2
@@ -75,6 +77,8 @@ runs:
     - name: 케이스 생성
       id: generate-cases
       shell: bash
+      env:
+        PYTHONPATH: "${{ inputs.module-path }}:${PYTHONPATH}"
       run: |
         : 케이스 생성
         set -euo pipefail
