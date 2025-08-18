@@ -90,6 +90,7 @@ runs:
         set -euo pipefail
 
         docker pull -q ubuntu:latest >/dev/null
+        docker run --rm ubuntu:latest bash -lc 'echo 0'
 
         PASS=0
 
