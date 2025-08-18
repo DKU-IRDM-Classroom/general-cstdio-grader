@@ -45,7 +45,7 @@ runs:
 
         if [ ! -f ./main.c ]; then
           echo "형식 오류 (PE): main.c 파일 없음"
-          echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
+          echo "::notice::Points 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
         fi
@@ -63,7 +63,7 @@ runs:
           exit 0
         else
           echo "컴파일 오류 (CE)"
-          echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
+          echo "::notice::Points 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
         fi
