@@ -1,1 +1,3 @@
-# stdio-grader-action
+# General C Standard I/O Grader
+
+WIP.

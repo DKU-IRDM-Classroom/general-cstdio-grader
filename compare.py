@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys
 
 from typing import List
@@ -7,7 +5,7 @@ from typing import List
 from pathlib import Path
 
 
-def get_lines_from_file(file_path: Path) -> List[List[str]]:
+def read_lines(file_path: Path) -> List[List[str]]:
 
     try:
         content = file_path.open('r').read()
@@ -39,22 +37,19 @@ def main():
     ans_path = Path(sys.argv[1])
     out_path = Path(sys.argv[2])
 
-    ans_lines = get_lines_from_file(ans_path)
-    out_lines = get_lines_from_file(out_path)
+    lines_ans = read_lines(ans_path)
+    lines_out = read_lines(out_path)
 
-    if len(ans_lines) != len(out_lines):
-        print("[DEBUG] num lines mismatch", len(ans_lines), len(out_lines))
+    if len(lines_ans) != len(lines_out):
         sys.exit(2)
 
-    for ans_line, out_line in zip(ans_lines, out_lines):
+    for line_ans, line_out in zip(lines_ans, lines_out):
 
-        if len(ans_line) != len(out_line):
-            print("[DEBUG] num tokens mismatch", ans_line, out_line)
+        if len(line_ans) != len(line_out):
             sys.exit(2)
 
-        for ans_token, out_token in zip(ans_line, out_line):
-            if ans_token != out_token:
-                print("[DEBUG] token mismatch", ans_token, out_token)
+        for token_ans, token_out in zip(line_ans, line_out):
+            if token_ans != token_out:
                 sys.exit(1)
 
     sys.exit(0)

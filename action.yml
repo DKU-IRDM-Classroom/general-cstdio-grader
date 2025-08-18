@@ -1,5 +1,5 @@
-name: "general-stdio-grader"
-description: "General Std I/O Grader"
+name: "general-cstdio-grader"
+description: "General C Standard I/O Grader"
 author: "DKU-IRDM-Classroom"
 
 inputs:
@@ -12,8 +12,6 @@ inputs:
   output-limit:
     required: false
     default: 1048576
-  total:
-    required: true
 
 permissions:
   contents: read
@@ -24,12 +22,27 @@ runs:
   using: "composite"
   steps:
 
+    - name: 채점기 준비
+      id: prepare-grader
+      shell: bash
+      run: |
+        : 채점기 준비
+        set -euo pipefail
+
+        mkdir -p "$HOME/workdir"
+        chmod 777 "$HOME/workdir"
+
     - name: 빌드 준비
-      id: prepare
+      id: prepare-build
       shell: bash
       run: |
         : 빌드 준비
         set -euo pipefail
+
+        if [ ! -f ./main.c ]; then
+          echo "액션 오류: main.c 파일 없음"
+          exit 2
+        fi
 
         command -v docker >/dev/null
         docker pull -q gcc:13 >/dev/null
@@ -40,11 +53,6 @@ runs:
       run: |
         : 빌드
         set -euo pipefail
-
-        if [ ! -f ./main.c ]; then
-          echo "액션 오류: main.c 파일 없음"
-          exit 2
-        fi
 
         cp ./main.c "$HOME/workdir/"
 
@@ -64,38 +72,36 @@ runs:
           gcc:13 \
           bash -lc 'set -euo pipefail; gcc -O2 -std=c17 -o main main.c'
 
-    - name: fail
-      id: fail
-      if: ${{ steps.build.outcome != 'success' }}
+    - name: 케이스 생성
+      id: generate-cases
       shell: bash
       run: |
-        : 빌드 실패
+        : 케이스 생성
         set -euo pipefail
 
-        PASS=0
-        TOTAL="${{ inputs.total }}"
+        python3 \
+          "${{ github.action_path }}/generate_cases.py" \
+          "$HOME/workdir"
 
-        echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}" > result.json
-        echo "result=$(jq -c . result.json | jq -sRr @base64)" >> "$GITHUB_OUTPUT"
+        if [ ! -f "$HOME/workdir/num_cases.txt" ]; then
+          echo "액션 오류: num_cases.txt 파일 없음" >&2
+          exit 1
+        fi
 
-    - name: reporter
-      if: ${{ steps.build.outcome != 'success' }}
-      uses: classroom-resources/autograding-grading-reporter@v1
-      env:
-        FAIL_RESULTS: "${{ steps.fail.outputs.result }}"
-      with:
-        runners: fail
+        TOTAL=$(tr -d '\r' < "$HOME/workdir/num_cases.txt" | head -n1)
+        case "$TOTAL" in ''|*[!0-9]* ) echo "액션 오류: 케이스 수가 올바르지 않음 - '$TOTAL'" >&2; exit 1;; esac
+
+        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
     - name: grade
       id: grade
-      if: ${{ steps.build.outcome == 'success' }}
       shell: bash
       run: |
         : 채점
         set -euo pipefail
 
         PASS=0
-        TOTAL="${{ inputs.total }}"
+        TOTAL="${{ steps.generate-cases.outputs.total }}"
 
         for n in $(seq 1 ${TOTAL}); do
 
@@ -120,15 +126,15 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "[케이스 ${n}] 시간 초과 (TLE)"; continue
+            echo "[케이스 ${n}] 시간 초과 (TLE)"; exit 2
           elif [ ${RC} -eq 137 ]; then
-            echo "[케이스 ${n}] 메모리 초과 (MLE)"; continue
+            echo "[케이스 ${n}] 메모리 초과 (MLE)"; exit 2
           elif [ ${RC} -ne 0 ]; then
-            echo "[케이스 ${n}] 실행 오류 (RE)"; continue
+            echo "[케이스 ${n}] 실행 오류 (RE)"; exit 2
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
-            echo "[케이스 ${n}] 출력 초과 (OLE)"; continue
+            echo "[케이스 ${n}] 출력 초과 (OLE)"; exit 2
           fi
 
           set +e
@@ -142,22 +148,11 @@ runs:
           if [ $CMP -eq 0 ]; then
             echo "[케이스 ${n}] 정답 (AC)"; PASS=$((PASS+1))
           elif [ $CMP -eq 1 ]; then
-            echo "[케이스 ${n}] 오답 (WA)"
+            echo "[케이스 ${n}] 오답 (WA)"; exit 2
           elif [ $CMP -eq 2 ]; then
-            echo "[케이스 ${n}] 형식 오류 (PE)"
+            echo "[케이스 ${n}] 형식 오류 (PE)"; exit 2
           else
-            echo "[케이스 ${n}] 내부 오류 (IE)"
+            echo "[케이스 ${n}] 내부 오류 (IE)"; exit 1
           fi
 
         done
-
-        echo "{\"name\":\"grade result\",\"score\":$PASS,\"max_score\":$TOTAL,\"output\":\"Points $PASS/$TOTAL\"}" > result.json
-        echo "result=$(jq -c . result.json | jq -sRr @base64)" >> "$GITHUB_OUTPUT"
-
-    - name: reporter
-      if: ${{ steps.build.outcome == 'success' }}
-      uses: classroom-resources/autograding-grading-reporter@v1
-      env:
-        GRADE_RESULTS: "${{ steps.grade.outputs.result }}"
-      with:
-        runners: grade
