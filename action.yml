@@ -91,7 +91,7 @@ runs:
         : 채점
         set -euo pipefail
 
-        docker pull ubuntu-latest
+        # docker pull -q ubuntu:latest >/dev/null
 
         PASS=0
 
@@ -112,7 +112,7 @@ runs:
             -v "$HOME/workdir":/workdir \
             -w /workdir \
             -e n="$n" \
-            ubuntu-latest \
+            ubuntu:latest \
             bash -lc '/workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"'
           RC=$?
           set -e
