@@ -89,8 +89,6 @@ runs:
         : 채점
         set -euo pipefail
 
-        docker pull -q gcc:13 >/dev/null
-
         PASS=0
 
         for n in $(seq 1 ${{ inputs.total-cases }}); do
@@ -110,7 +108,7 @@ runs:
             -v "$HOME/workdir":/workdir \
             -w /workdir \
             -e n="$n" \
-            gcc:13 \
+            debian:stable-slim \
             bash -lc '/workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"'
           RC=$?
           set -e
