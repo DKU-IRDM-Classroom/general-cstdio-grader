@@ -164,4 +164,5 @@ runs:
 
         done
 
-        echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
+        echo "::notice title=Autograding complete::Points ${PASS}/${{ inputs.total-cases }}"
+        echo "::notice title=Autograding report::{\"totalPoints\":${PASS},\"maxPoints\":${{ inputs.total-cases }}}"
