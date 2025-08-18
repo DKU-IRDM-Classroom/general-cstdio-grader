@@ -5,6 +5,8 @@ author: "DKU-IRDM-Classroom"
 inputs:
   module-path:
     required: true
+  total-cases:
+    required: true
   time-limit:
     required: false
     default: 2
@@ -31,16 +33,6 @@ runs:
         : 채점기 준비
         set -euo pipefail
 
-        if [ ! -f "${{ inputs.module-path }}/num_cases.txt" ]; then
-          echo "::warning::액션 오류: num_cases.txt 파일 없음" >&2
-          exit 1
-        fi
-
-        TOTAL=$(tr -d '\r' < "${{ inputs.module-path }}/num_cases.txt" | head -n1)
-        case "$TOTAL" in ''|*[!0-9]* ) echo "::warning::액션 오류: 케이스 수가 올바르지 않음 ('$TOTAL')" >&2; exit 1;; esac
-
-        echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
-
         mkdir -p "$HOME/workdir"
         chmod 777 "$HOME/workdir"
 
@@ -53,7 +45,7 @@ runs:
 
         if [ ! -f ./main.c ]; then
           echo "::warning::형식 오류: main.c 파일 없음"
-          echo "Points 0/${{ steps.prepare-grader.outputs.total }}"
+          echo "Points 0/${{ inputs.total-cases }}"
           exit 2
         fi
 
@@ -89,7 +81,7 @@ runs:
               exit 0
             else
               echo "::warning::컴파일 오류"
-              echo "Points 0/${{ steps.prepare-grader.outputs.total }}"
+              echo "Points 0/${{ inputs.total-cases }}"
               exit 2
             fi
           '
@@ -106,7 +98,7 @@ runs:
         python3 \
           "${{ github.action_path }}/generate_cases.py" \
           "$HOME/workdir" \
-          "$TOTAL"
+          "${{ inputs.total-cases }}"
 
     - name: grade
       id: grade
@@ -116,9 +108,8 @@ runs:
         set -euo pipefail
 
         PASS=0
-        TOTAL="${{ steps.generate-cases.outputs.total }}"
 
-        for n in $(seq 1 ${TOTAL}); do
+        for n in $(seq 1 ${{ inputs.total-cases }}); do
 
           set +e
           timeout --signal=KILL ${{ inputs.time-limit }}s \
@@ -172,4 +163,4 @@ runs:
 
         done
 
-        echo "Points ${PASS}/${TOTAL}"
+        echo "Points ${PASS}/${{ inputs.total-cases }}"
