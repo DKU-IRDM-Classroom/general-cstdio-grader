@@ -12,10 +12,12 @@ from solve import solve
 
 
 def write_lines(file_path: Path, lines: List[List[Union[int, float, str]]]):
+
     linestrs = []
     for line in lines:
         linestr = ' '.join([str(token) for token in line])
         linestrs.append(linestr)
+
     with file_path.open('w') as file_pointer:
         file_pointer.write('\n'.join(linestrs) + '\n')
 

@@ -4,34 +4,46 @@ import json
 from pathlib import Path
 
 
-def generate_results(total_score: int, pass_score: int):
-    return {
+def main():
+
+    base_dir = Path(sys.argv[1]).absolute()
+    total_score = int(sys.argv[2])
+
+    statuss = []
+    for n in range(1, total_score + 1):
+        result_path = base_dir / f'{n}.result'
+        if not result_path.exists():
+            sys.exit(1)
+        with open(result_path, 'r') as file_pointer:
+            result = file_pointer.read().strip()
+            if result == 'pass':
+                statuss.append('pass')
+            elif result == 'fail':
+                statuss.append('fail')
+            else:
+                sys.exit(1)
+
+    results = {
         'version': 1,
-        'status': 'pass',
+        'status': 'fail' if 'fail' in statuss else 'pass',
         'max_score': total_score,
         'tests': [
             {
-                'name': 'Test',
-                'status': 'pass' if pass_score > 0 else 'fail',
-                'score': pass_score,
+                'name': f'Test {n}',
+                'status': status,
+                'score': 1 if status == 'pass' else 0,
                 'message': '',
                 'test_code': '',
                 'filename': '',
                 'line_no': 0,
                 'execution_time': 0,
-            },
+            } for n, status in enumerate(statuss, start=1)
         ],
     }
 
-
-if __name__ == '__main__':
-
-    base_dir = Path(sys.argv[1]).absolute()
-
-    total_score = int(sys.argv[2])
-    pass_score = int(sys.argv[3])
-
-    results = generate_results(total_score, pass_score)
-
     with open(base_dir / 'results.json', 'w') as file_pointer:
         json.dump(results, file_pointer)
+
+
+if __name__ == '__main__':
+    main()

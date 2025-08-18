@@ -109,8 +109,6 @@ runs:
         : 채점
         set -euo pipefail
 
-        PASS=0
-
         for n in $(seq 1 ${{ inputs.total-cases }}); do
 
           set +e
@@ -134,15 +132,23 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "::warning::[Case ${n}] 시공간 초과 (TMLE)"; continue
+            echo "::warning::[Case ${n}] 시공간 초과 (TMLE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           elif [ ${RC} -eq 137 ]; then
-            echo "::warning::[Case ${n}] 시공간 초과 (TMLE)"; continue
+            echo "::warning::[Case ${n}] 시공간 초과 (TMLE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           elif [ ${RC} -ne 0 ]; then
-            echo "::warning::[Case ${n}] 실행 오류 (RE)"; continue
+            echo "::warning::[Case ${n}] 실행 오류 (RE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
-            echo "::warning::[Case ${n}] 출력 초과 (OLE)"; continue
+            echo "::warning::[Case ${n}] 출력 초과 (OLE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           fi
 
           set +e
@@ -154,13 +160,21 @@ runs:
           set -e
 
           if [ $CMP -eq 0 ]; then
-            echo "[Case ${n}] 정답 (AC)"; PASS=$((PASS+1))
+            echo "[Case ${n}] 정답 (AC)"
+            echo "pass" > "$HOME/workdir/${n}.result"
+            continue
           elif [ $CMP -eq 1 ]; then
-            echo "::warning::[Case ${n}] 오답 (WA)"; continue
+            echo "::warning::[Case ${n}] 오답 (WA)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           elif [ $CMP -eq 2 ]; then
-            echo "::warning::[Case ${n}] 형식 오류 (PE)"; continue
+            echo "::warning::[Case ${n}] 형식 오류 (PE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           else
-            echo "::warning::[Case ${n}] 내부 오류 (IE)"; continue
+            echo "::warning::[Case ${n}] 내부 오류 (IE)"
+            echo "fail" > "$HOME/workdir/${n}.result"
+            continue
           fi
 
         done
@@ -168,8 +182,7 @@ runs:
         python3 \
           "${{ github.action_path }}/generate_results.py" \
           "$HOME/workdir" \
-          "${{ inputs.total-cases }}" \
-          "${PASS}"
+          "${{ inputs.total-cases }}"
         echo "results=$(jq -c . $HOME/workdir/results.json | base64 -w0)" >> $GITHUB_OUTPUT
 
     - name: 리포트
