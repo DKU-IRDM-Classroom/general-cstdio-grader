@@ -117,21 +117,17 @@ runs:
 
           if [ ${RC} -eq 124 ]; then
             echo "::warning::[Case ${n}] 시공간 초과 (SLE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           elif [ ${RC} -eq 137 ]; then
             echo "::warning::[Case ${n}] 시공간 초과 (SLE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           elif [ ${RC} -ne 0 ]; then
             echo "::warning::[Case ${n}] 실행 오류 (RE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
             echo "::warning::[Case ${n}] 출력 초과 (OLE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           fi
 
@@ -146,19 +142,15 @@ runs:
           if [ $CMP -eq 0 ]; then
             echo "[Case ${n}] 정답 (AC)"
             PASS=$((PASS+1))
-            # echo "pass" > "$HOME/workdir/${n}.result"
             continue
           elif [ $CMP -eq 1 ]; then
             echo "::warning::[Case ${n}] 오답 (WA)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           elif [ $CMP -eq 2 ]; then
             echo "::warning::[Case ${n}] 형식 오류 (PE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           else
             echo "::warning::[Case ${n}] 내부 오류 (IE)"
-            # echo "fail" > "$HOME/workdir/${n}.result"
             continue
           fi
 
