@@ -45,7 +45,7 @@ runs:
 
         if [ ! -f ./main.c ]; then
           echo "::error::형식 오류: main.c 파일 없음"
-          echo "::notice title=Autograding complete::Points ${PASS}/${{ inputs.total-cases }}"
+          echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
         fi
@@ -62,31 +62,14 @@ runs:
 
         cp ./main.c "$HOME/workdir/"
 
-        docker run --rm \
-          --pull=never \
-          --network none \
-          --cpus "1.0" \
-          --memory "${{ inputs.memory-limit }}" \
-          --memory-swap "${{ inputs.memory-limit }}" \
-          --pids-limit "128" \
-          --cap-drop ALL \
-          --security-opt no-new-privileges \
-          --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
-          -u "$(id -u):$(id -g)" \
-          -v "$HOME/workdir":/workdir \
-          -w /workdir \
-          gcc:13 \
-          bash -lc '
-            set -euo pipefail;
-            if gcc -O2 -std=c17 -o main main.c >/dev/null 2>/tmp/gcc.err; then
-              exit 0
-            else
-              echo "::error::컴파일 오류"
-              echo "::notice title=Autograding complete::Points ${PASS}/${{ inputs.total-cases }}"
-              echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
-              exit 2
-            fi
-          '
+        if gcc -O2 -std=c17 -o "$HOME/workdir/main" main.c >/dev/null 2>/tmp/gcc.err; then
+          exit 0
+        else
+          echo "::error::컴파일 오류"
+          echo "::notice title=Autograding complete::Points 0/${{ inputs.total-cases }}"
+          echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
+          exit 2
+        fi
 
     - name: Case 생성
       id: generate-cases
