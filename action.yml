@@ -165,7 +165,7 @@ runs:
 
         echo "::notice::Points ${PASS}/${{ inputs.total-cases }}"
         python3 \
-          "${{ github.action_path }}/generate_result.py" \
+          "${{ github.action_path }}/generate_results.py" \
           "$HOME/workdir" \
           "${{ inputs.total-cases }}" \
           "${PASS}"
