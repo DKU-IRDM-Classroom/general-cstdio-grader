@@ -165,7 +165,7 @@ runs:
 
         echo "::notice::Points ${PASS}/${{ inputs.total-cases }}"
 
-        python3 generate_result.py "${PASS}" "${inputs.total-cases}"
+        python3 generate_result.py "${{ inputs.total-cases }}" "${PASS}"
         echo "results=$(jq -c . results.json | base64 -w0)" >> $GITHUB_OUTPUT
 
     - name: 리포트
