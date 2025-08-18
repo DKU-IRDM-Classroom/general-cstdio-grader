@@ -36,8 +36,6 @@ runs:
         mkdir -p "$HOME/workdir"
         chmod 777 "$HOME/workdir"
 
-        docker image ls
-
     - name: 빌드 준비
       id: prepare-build
       shell: bash
@@ -47,7 +45,7 @@ runs:
 
         if [ ! -f ./main.c ]; then
           echo "형식 오류 (PE): main.c 파일 없음"
-          echo "::notice::Points 0/${{ inputs.total-cases }}"
+          echo "::notice::점수 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
         fi
@@ -65,18 +63,18 @@ runs:
           exit 0
         else
           echo "컴파일 오류 (CE)"
-          echo "::notice::Points 0/${{ inputs.total-cases }}"
+          echo "::notice::점수 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
           exit 2
         fi
 
-    - name: Case 생성
+    - name: 케이스 생성
       id: generate-cases
       shell: bash
       env:
         PYTHONPATH: "${{ inputs.module-path }}:${PYTHONPATH}"
       run: |
-        : Case 생성
+        : 케이스 생성
         set -euo pipefail
 
         python3 \
@@ -91,7 +89,7 @@ runs:
         : 채점
         set -euo pipefail
 
-        # docker pull -q ubuntu:latest >/dev/null
+        docker pull -q ubuntu:latest >/dev/null
 
         PASS=0
 
@@ -158,5 +156,5 @@ runs:
 
         done
 
-        echo "::notice::Points ${PASS}/${{ inputs.total-cases }}"
+        echo "::notice::점수 ${PASS}/${{ inputs.total-cases }}"
         echo "::notice title=Autograding report::{\"totalPoints\":${PASS},\"maxPoints\":${{ inputs.total-cases }}}"
