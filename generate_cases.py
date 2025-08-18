@@ -23,16 +23,13 @@ def write_lines(file_path: Path, lines: List[List[Union[int, float, str]]]):
 def main():
 
     base_dir = Path(sys.argv[1]).absolute()
+    num_cases = int(sys.argv[2].strip())
 
-    num_cases_file_path = base_dir / 'num_cases.txt'
-    with num_cases_file_path.open('r') as file_pointer:
-        num_cases = int(file_pointer.read().strip())
-
-    for i in range(1, num_cases + 1):
-        lines_in = generate(i)
+    for case_number in range(1, num_cases + 1):
+        lines_in = generate(case_number)
         lines_ans = solve(lines_in)
-        write_lines(base_dir / f'{i}.in', lines_in)
-        write_lines(base_dir / f'{i}.ans', lines_ans)
+        write_lines(base_dir / f'{case_number}.in', lines_in)
+        write_lines(base_dir / f'{case_number}.ans', lines_ans)
 
 
 if __name__ == '__main__':

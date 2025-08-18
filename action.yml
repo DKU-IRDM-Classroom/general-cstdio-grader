@@ -83,19 +83,20 @@ runs:
         : 케이스 생성
         set -euo pipefail
 
-        python3 \
-          "${{ github.action_path }}/generate_cases.py" \
-          "$HOME/workdir"
-
-        if [ ! -f "$HOME/workdir/num_cases.txt" ]; then
+        if [ ! -f "${{ inputs.module-path }}/num_cases.txt" ]; then
           echo "액션 오류: num_cases.txt 파일 없음" >&2
           exit 1
         fi
 
-        TOTAL=$(tr -d '\r' < "$HOME/workdir/num_cases.txt" | head -n1)
+        TOTAL=$(tr -d '\r' < "${{ inputs.module-path }}/num_cases.txt" | head -n1)
         case "$TOTAL" in ''|*[!0-9]* ) echo "액션 오류: 케이스 수가 올바르지 않음 - '$TOTAL'" >&2; exit 1;; esac
 
         echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
+        python3 \
+          "${{ github.action_path }}/generate_cases.py" \
+          "$HOME/workdir" \
+          "$TOTAL"
 
     - name: grade
       id: grade
