@@ -36,6 +36,8 @@ runs:
         mkdir -p "$HOME/workdir"
         chmod 777 "$HOME/workdir"
 
+        docker image ls
+
     - name: 빌드 준비
       id: prepare-build
       shell: bash
