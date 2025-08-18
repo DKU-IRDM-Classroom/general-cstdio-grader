@@ -6,19 +6,19 @@ from pathlib import Path
 
 def generate_results(total_score: int, pass_score: int):
     return {
-        # 'version': 1,
+        'version': 1,
         'status': 'pass',
         'max_score': total_score,
         'tests': [
             {
-                # 'name': 'Test',
+                'name': 'Test',
                 'status': 'pass' if pass_score > 0 else 'fail',
                 'score': pass_score,
-                # 'message': 'some_message_here',
-                # 'test_code': 'some_command_heere',
-                # 'filename': 'some_filename_here',
-                # 'line_no': 0,
-                # 'duration': 0,
+                'message': 'some_message_here',
+                'test_code': 'some_command_heere',
+                'filename': 'some_filename_here',
+                'line_no': 0,
+                'duration': 0,
             },
         ],
     }
