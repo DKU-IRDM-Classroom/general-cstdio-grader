@@ -72,7 +72,15 @@ runs:
           -v "$HOME/workdir":/workdir \
           -w /workdir \
           gcc:13 \
-          bash -lc 'set -euo pipefail; gcc -O2 -std=c17 -o main main.c'
+          bash -lc '
+            set -euo pipefail;
+            if gcc -O2 -std=c17 -o main main.c >/dev/null 2>/tmp/gcc.err; then
+              exit 0
+            else
+              echo "::error:: 빌드 실패"
+              exit 2
+            fi
+          '
 
     - name: 케이스 생성
       id: generate-cases
@@ -84,12 +92,12 @@ runs:
         set -euo pipefail
 
         if [ ! -f "${{ inputs.module-path }}/num_cases.txt" ]; then
-          echo "액션 오류: num_cases.txt 파일 없음" >&2
+          echo "::error:: 액션 오류: num_cases.txt 파일 없음" >&2
           exit 1
         fi
 
         TOTAL=$(tr -d '\r' < "${{ inputs.module-path }}/num_cases.txt" | head -n1)
-        case "$TOTAL" in ''|*[!0-9]* ) echo "액션 오류: 케이스 수가 올바르지 않음 - '$TOTAL'" >&2; exit 1;; esac
+        case "$TOTAL" in ''|*[!0-9]* ) echo "::error:: 액션 오류: 케이스 수가 올바르지 않음 - '$TOTAL'" >&2; exit 1;; esac
 
         echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
@@ -131,15 +139,15 @@ runs:
           set -e
 
           if [ ${RC} -eq 124 ]; then
-            echo "[케이스 ${n}] 시간 초과 (TLE)"; exit 2
+            echo "::error:: [케이스 ${n}] 시간 초과 (TLE)"; exit 2
           elif [ ${RC} -eq 137 ]; then
-            echo "[케이스 ${n}] 메모리 초과 (MLE)"; exit 2
+            echo "::error:: [케이스 ${n}] 메모리 초과 (MLE)"; exit 2
           elif [ ${RC} -ne 0 ]; then
-            echo "[케이스 ${n}] 실행 오류 (RE)"; exit 2
+            echo "::error:: [케이스 ${n}] 실행 오류 (RE)"; exit 2
           fi
           BYTES=$(stat -c%s "$HOME/workdir/${n}.out")
           if [ "$BYTES" -gt ${{ inputs.output-limit }} ]; then
-            echo "[케이스 ${n}] 출력 초과 (OLE)"; exit 2
+            echo "::error:: [케이스 ${n}] 출력 초과 (OLE)"; exit 2
           fi
 
           set +e
@@ -153,11 +161,11 @@ runs:
           if [ $CMP -eq 0 ]; then
             echo "[케이스 ${n}] 정답 (AC)"; PASS=$((PASS+1))
           elif [ $CMP -eq 1 ]; then
-            echo "[케이스 ${n}] 오답 (WA)"; exit 2
+            echo "::error:: [케이스 ${n}] 오답 (WA)"; exit 2
           elif [ $CMP -eq 2 ]; then
-            echo "[케이스 ${n}] 형식 오류 (PE)"; exit 2
+            echo "::error:: [케이스 ${n}] 형식 오류 (PE)"; exit 2
           else
-            echo "[케이스 ${n}] 내부 오류 (IE)"; exit 1
+            echo "::error:: [케이스 ${n}] 내부 오류 (IE)"; exit 1
           fi
 
         done
