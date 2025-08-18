@@ -175,6 +175,6 @@ runs:
       id: reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
-        GRADE_RESULTS: "${{ steps.grade.outputs.result }}"
+        GRADE_RESULTS: "${{ steps.grade.outputs.results }}"
       with:
         runners: grade

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 
-def generate_result(total_score: int, pass_score: int):
+def generate_results(total_score: int, pass_score: int):
     return {
         # 'version': 1,
         'status': 'pass',
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     total_score = int(sys.argv[2])
     pass_score = int(sys.argv[3])
 
-    result = generate_result(total_score, pass_score)
+    results = generate_results(total_score, pass_score)
 
     with open(base_dir / 'results.json', 'w') as file_pointer:
-        json.dump(result, file_pointer, indent=2)
+        json.dump(results, file_pointer, indent=2)
