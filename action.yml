@@ -89,6 +89,8 @@ runs:
         : 채점
         set -euo pipefail
 
+        docker pull -q gcc:13 >/dev/null
+
         PASS=0
 
         for n in $(seq 1 ${{ inputs.total-cases }}); do
