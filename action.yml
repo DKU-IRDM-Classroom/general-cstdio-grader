@@ -132,9 +132,6 @@ runs:
           elif [ "$EXIT" -eq 124 ]; then
             echo "[Case ${n}] 시간 초과 (TLE)"
             continue
-          elif [ ${EXIT} -eq 137 ]; then
-            echo "[Case ${n}] 시간 초과 (TLE)"
-            continue
           elif [ ${RC} -ne 0 ] || [ ${EXIT} -ne 0 ]; then
             echo "[Case ${n}] 실행 오류 (RE)"
             continue
