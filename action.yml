@@ -96,9 +96,12 @@ runs:
 
         for n in $(seq 1 ${{ inputs.total-cases }}); do
 
+          NAME="grader-${n}-$$"
+
           set +e
           timeout --signal=KILL ${{ inputs.time-limit }}s \
-          docker run --rm \
+          docker run \
+            --name "$NAME" \
             --network none \
             --cpus "1.0" \
             --memory "${{ inputs.memory-limit }}" \
@@ -116,13 +119,24 @@ runs:
           RC=$?
           set -e
 
+          OOM=false
+          EXIT=0
+          if docker inspect "$NAME" >/dev/null 2>&1; then
+            OOM=$(docker inspect -f '{{.State.OOMKilled}}' "$NAME")
+            EXIT=$(docker inspect -f '{{.State.ExitCode}}' "$NAME")
+          fi
+          docker rm -f "$NAME" >/dev/null 2>&1 || true
+
           if [ ${RC} -eq 124 ]; then
-            echo "[Case ${n}] 시공간 초과 (T/MLE)"
+            echo "[Case ${n}] 시간 초과 (TLE)"
             continue
-          elif [ ${RC} -eq 137 ]; then
-            echo "[Case ${n}] 시공간 초과 (T/MLE)"
+          elif [ "$OOM" = "true" ]; then
+            echo "[Case ${n}] 메모리 초과 (MLE)"
             continue
-          elif [ ${RC} -ne 0 ]; then
+          elif [ ${EXIT} -eq 137 ]; then
+            echo "[Case ${n}] 실행 오류 (RE)"
+            continue
+          elif [ ${RC} -ne 0 ] || [ ${EXIT} -ne 0 ]; then
             echo "[Case ${n}] 실행 오류 (RE)"
             continue
           fi
