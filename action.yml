@@ -114,7 +114,7 @@ runs:
             -w /workdir \
             -e n="$n" \
             ubuntu:latest \
-            bash -lc 'timeout -k 1s ${{ inputs.time-limit }}s /workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"'
+            bash -lc 'timeout -k 1s ${{ inputs.time-limit }}s /workdir/main < "/workdir/${n}.in" > "/workdir/${n}.out"' 2>/dev/null
           RC=$?
           set -e
 
