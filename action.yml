@@ -59,7 +59,7 @@ runs:
 
         cp ./main.c "$HOME/workdir/"
 
-        if gcc -O2 -std=c17 -o "$HOME/workdir/main" main.c >/dev/null 2>/tmp/gcc.err; then
+        if gcc -O2 -std=c17 -o "$HOME/workdir/main" main.c -lm >/dev/null 2>/tmp/gcc.err; then
           exit 0
         else
           echo "컴파일 오류 (CE)"
