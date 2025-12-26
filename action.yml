@@ -47,7 +47,6 @@ runs:
           echo "형식 오류 (PE): main.c 파일 없음"
           echo "::notice::점수 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
-          echo "Points=0/${{ inputs.total-cases }}" >> $GITHUB_OUTPUT
           exit 2
         fi
 
@@ -66,7 +65,6 @@ runs:
           echo "컴파일 오류 (CE)"
           echo "::notice::점수 0/${{ inputs.total-cases }}"
           echo "::notice title=Autograding report::{\"totalPoints\":0,\"maxPoints\":${{ inputs.total-cases }}}"
-          echo "Points=0/${{ inputs.total-cases }}" >> $GITHUB_OUTPUT
           exit 2
         fi
 
@@ -171,4 +169,3 @@ runs:
 
         echo "::notice::점수 ${PASS}/${{ inputs.total-cases }}"
         echo "::notice title=Autograding report::{\"totalPoints\":${PASS},\"maxPoints\":${{ inputs.total-cases }}}"
-        echo "Points=${PASS}/${{ inputs.total-cases }}" >> $GITHUB_OUTPUT
